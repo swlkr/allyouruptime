@@ -1,0 +1,33 @@
+{{define "header"}}
+  <!DOCTYPE html>
+  <html lang="en">
+    <head>
+      <title>
+        {{block "title" .}}default title{{end}}
+      </title>
+      <link rel=stylesheet href="/static/bueller.css" />
+    </head>
+    <body>
+      <nav>
+        <a href=/>Home</a>
+        {{if .CurrentUser}}
+          <h-stack>
+            <a href="/new-site">Add your site</a>
+            <form action=/logout method=post>
+              <input type=hidden name=_csrf value={{.CsrfToken}} />
+              <input type=submit value=Logout />
+            </form>
+          </h-stack>
+        {{else}}
+          <div>
+            <a href=/new-signup>Signup</a>
+            <a href=/login>Login</a>
+          </div>
+        {{end}}
+      </nav>
+{{end}}
+
+{{define "footer"}}
+  </body>
+</html>
+{{end}}
