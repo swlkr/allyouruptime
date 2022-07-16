@@ -115,27 +115,6 @@ func (m *SQLModel) CreateSession(user User) (Session, error) {
 	return session, err
 }
 
-func (m *SQLModel) FindSession(id string) (*Session, error) {
-	row := m.db.QueryRow(
-		`
-		select id, session_id, user_id, updated_at, created_at
-		from sessions
-		where session_id = $1
-		`, id,
-	)
-	session := Session{}
-	err := row.Scan(&session.Id, &session.SessionId, &session.UserId, &session.UpdatedAt, &session.CreatedAt)
-	if err != nil {
-		switch err {
-		case sql.ErrNoRows:
-			return nil, nil
-		default:
-			return nil, err
-		}
-	}
-	return &session, nil
-}
-
 func (m *SQLModel) DeleteSession(id string) (sql.Result, error) {
 	return m.db.Exec(`delete from sessions where id = $1`, id)
 }
@@ -155,27 +134,6 @@ func (m *SQLModel) CreateSite(userId int64, name sql.NullString, url string) (Si
 		userId, name, url,
 	)
 	return newSite(row)
-}
-
-func (m *SQLModel) FindUser(id int64) (*User, error) {
-	row := m.db.QueryRow(
-		`
-		select id, passcode, email, updated_at, created_at
-		from users
-		where id = $1
-		`, id,
-	)
-	user := User{}
-	err := row.Scan(&user.Id, &user.Passcode, &user.Email, &user.UpdatedAt, &user.CreatedAt)
-	if err != nil {
-		switch err {
-		case sql.ErrNoRows:
-			return nil, nil
-		default:
-			return nil, err
-		}
-	}
-	return &user, err
 }
 
 func (m *SQLModel) FindCurrentUser(sessionId string) *User {

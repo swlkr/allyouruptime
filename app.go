@@ -46,9 +46,7 @@ type App struct {
 type Model interface {
 	CreateSession(user User) (Session, error)
 	CreateUser() (User, error)
-	FindUser(id int64) (*User, error)
 	FindCurrentUser(id string) *User
-	FindSession(id string) (*Session, error)
 	DeleteSession(id string) (sql.Result, error)
 	CreateSite(userId int64, name sql.NullString, url string) (Site, error)
 	ListSites(userId int64) []Site
