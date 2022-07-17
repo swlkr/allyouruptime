@@ -1,15 +1,20 @@
 {{template "header" .}}
 
-<h1>Welcome to all your uptime!</h1>
-
+<h1>
+  welcome to all your uptime
+</h1>
 <p>
   The simple way to monitor your websites and get alerts when you have downtime.
 </p>
 
-<form action=/signup method=post>
+<form action=/signup method=post class="mx-auto flex flex-col w-2/3 mt-4">
   <input type=hidden name=_csrf value={{.CsrfToken}} />
+  <label>
+    <div>Enter your url</div>
+    <input type=text name=url placeholder="https://example.com" class="w-full" />
+  </label>
   <button type=submit>
-    Click here to start monitoring your uptime today!
+    Click here to start monitoring
   </button>
 </form>
 

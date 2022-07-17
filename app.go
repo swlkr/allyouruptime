@@ -2,7 +2,6 @@ package main
 
 import (
 	"crypto/rand"
-	"database/sql"
 	"embed"
 	"encoding/hex"
 	"html/template"
@@ -22,6 +21,7 @@ type View struct {
 	CsrfToken     string
 	Home
 	NewSite
+	Profile
 }
 
 type NewSite struct {
@@ -32,6 +32,10 @@ type NewSite struct {
 type Home struct {
 	Passcode string
 	Sites    []Site
+}
+
+type Profile struct {
+	Email string
 }
 
 type App struct {
@@ -64,6 +68,8 @@ func (app *App) addRoutes() {
 	app.post("/logout", app.private(app.logout))
 	app.get("/new-site", app.private(app.newSite))
 	app.post("/create-site", app.private(app.createSite))
+	app.get("/profile", app.private(app.profile))
+	app.post("/update-profile", app.private(app.updateProfile))
 
 	fileServer := http.FileServer(http.Dir("./static/"))
 	app.mux.Handle("/static/", http.StripPrefix("/static", fileServer))
@@ -83,7 +89,7 @@ func (app *App) createSite(w http.ResponseWriter, r *http.Request) {
 	name := r.FormValue("name")
 	url := r.FormValue("url")
 	userId := app.currentUserId(r) // TODO: context?
-	_, err := app.model.CreateSite(userId, sql.NullString{String: name, Valid: name != ""}, url)
+	_, err := app.model.CreateSite(userId, name, url)
 	if err != nil {
 		app.newSite(w, r)
 	}
@@ -140,7 +146,25 @@ func (app *App) signup(w http.ResponseWriter, r *http.Request) {
 	}
 	http.SetCookie(w, cookie)
 	SetFlash(w, "passcode", []byte(user.Passcode))
+	_, err = app.model.CreateSite(user.Id, "", r.FormValue("url"))
 	redirect(w, r, "/")
+}
+
+func (app *App) profile(w http.ResponseWriter, r *http.Request) {
+	view := View{
+		Profile: Profile{
+			Email: app.currentUser(r).Email.String,
+		},
+	}
+	app.render(w, r, "profile", view)
+}
+
+func (app *App) updateProfile(w http.ResponseWriter, r *http.Request) {
+	err := app.model.UpdateEmail(app.currentUserId(r), r.FormValue("email"))
+	if err != nil {
+		http.Error(w, "500 Internal Server Error", http.StatusInternalServerError)
+	}
+	redirect(w, r, "/profile")
 }
 
 func (app *App) private(h http.HandlerFunc) http.HandlerFunc {

@@ -1,23 +1,19 @@
 {{template "header" .}}
 
-<h1>Welcome to all your uptime!</h1>
-
-<p>
+{{define "title"}}all your uptime{{end}}
+{{define "h1"}}welcome to all your uptime!{{end}}
+{{define "subtitle"}}
   The simple way to monitor your websites and get alerts when you have downtime.
-</p>
+{{end}}
 
 {{if .Home.Passcode}}
   <p>
     This is your secret passcode, keep it secret, don't forget it, it's how you log back into this website.
-    <br/>
-    <br/>
+  </p>
 
+  <p>
     If you think you'll forget it, <a href="/profile">click here to add an optional email to your profile</a> and I'll send
     you a new one if you do forget
-    <br/>
-    <br/>
-
-    Don't share it with anyone either, this passcode is the secret key to get back into this website
   </p>
 
   <h3>
@@ -27,13 +23,15 @@
   </h3>
 {{end}}
 
-<h3>Your Sites</h3>
-<ul>
-  {{range .Sites}}
-    <li>
-      {{if .Name.Valid}}{{.Name.String}} -- {{end}}{{.Url}}
-    </li>
-  {{end}}
-</ul>
+{{if .Sites}}
+  <h3>Your Sites</h3>
+  <ul>
+    {{range .Sites}}
+      <li>
+        {{if .Name.Valid}}{{.Name.String}} -- {{end}}{{.Url}}
+      </li>
+    {{end}}
+  </ul>
+{{end}}
 
 {{template "footer"}}

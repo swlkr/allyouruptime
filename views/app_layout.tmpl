@@ -3,28 +3,28 @@
   <html lang="en">
     <head>
       <title>
-        {{block "title" .}}default title{{end}}
+        all your uptime
       </title>
-      <link rel=stylesheet href="/static/bueller.css" />
+      <link rel=stylesheet href="/static/simple.min.css" />
     </head>
     <body>
-      <nav>
-        <a href=/>Home</a>
-        {{if .CurrentUserId}}
-          <h-stack>
-            <a href="/new-site">Add your site</a>
+      <header>
+        <nav>
+          <a href=/>Home</a>
+          {{if .CurrentUserId}}
+            <a href="/new-site">New site</a>
+            <a href="/profile">Profile</a>
             <form action=/logout method=post>
               <input type=hidden name=_csrf value={{.CsrfToken}} />
-              <input type=submit value=Logout />
+              <button type=submit>
+                Logout
+              </button>
             </form>
-          </h-stack>
-        {{else}}
-          <div>
+          {{else}}
             <a href=/new-signup>Signup</a>
-            <a href=/login>Login</a>
-          </div>
-        {{end}}
-      </nav>
+          {{end}}
+        </nav>
+      </header>
 {{end}}
 
 {{define "footer"}}

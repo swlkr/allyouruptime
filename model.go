@@ -121,7 +121,16 @@ func (m *Model) DeleteSession(id string) (sql.Result, error) {
 	return m.db.Exec(`delete from sessions where id = $1`, id)
 }
 
-func (m *Model) CreateSite(userId int64, name sql.NullString, url string) (Site, error) {
+func nullify(s string) sql.NullString {
+	if s == "" {
+		return sql.NullString{Valid: false}
+	} else {
+		return sql.NullString{String: s, Valid: true}
+	}
+}
+
+func (m *Model) CreateSite(userId int64, n string, url string) (Site, error) {
+	name := nullify(n)
 	row := m.db.QueryRow(
 		`
 		insert into sites (
@@ -219,6 +228,19 @@ func (m *Model) ListSites(userId int64) []Site {
 		}
 	}
 	return sites
+}
+
+func (m *Model) UpdateEmail(userId int64, e string) error {
+	email := nullify(e)
+	_, err := m.db.Exec(
+		`
+		update users
+		set email = $1
+		where id = $2
+		`,
+		email, userId,
+	)
+	return err
 }
 
 func newSite(row *sql.Row) (Site, error) {
