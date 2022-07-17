@@ -10,7 +10,7 @@ import (
 func main() {
 	db, err := sql.Open("sqlite3", "allyouruptime.sqlite3")
 	haltOn(err)
-	model, err := NewSQLModel(db)
+	model, err := NewModel(db)
 	haltOn(err)
 	app, err := NewApp(log.Default(), model)
 	haltOn(err)

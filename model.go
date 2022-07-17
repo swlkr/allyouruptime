@@ -37,14 +37,14 @@ type Site struct {
 	CreatedAt int64
 }
 
-type SQLModel struct {
+type Model struct {
 	db  *sql.DB
 	rnd *rand.Rand
 }
 
-func NewSQLModel(db *sql.DB) (*SQLModel, error) {
+func NewModel(db *sql.DB) (Model, error) {
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
-	model := &SQLModel{db, rnd}
+	model := Model{db, rnd}
 	_, err := model.db.Exec(`
 		PRAGMA foreign_keys = ON;
 
@@ -86,7 +86,7 @@ func NewSQLModel(db *sql.DB) (*SQLModel, error) {
 	return model, err
 }
 
-func (m *SQLModel) CreateUser() (User, error) {
+func (m *Model) CreateUser() (User, error) {
 	row := m.db.QueryRow(
 		`insert into users (
 			passcode
@@ -101,7 +101,7 @@ func (m *SQLModel) CreateUser() (User, error) {
 	return user, err
 }
 
-func (m *SQLModel) CreateSession(user User) (Session, error) {
+func (m *Model) CreateSession(user User) (Session, error) {
 	row := m.db.QueryRow(
 		`insert into sessions (
 			session_id, user_id
@@ -117,11 +117,11 @@ func (m *SQLModel) CreateSession(user User) (Session, error) {
 	return session, err
 }
 
-func (m *SQLModel) DeleteSession(id string) (sql.Result, error) {
+func (m *Model) DeleteSession(id string) (sql.Result, error) {
 	return m.db.Exec(`delete from sessions where id = $1`, id)
 }
 
-func (m *SQLModel) CreateSite(userId int64, name sql.NullString, url string) (Site, error) {
+func (m *Model) CreateSite(userId int64, name sql.NullString, url string) (Site, error) {
 	row := m.db.QueryRow(
 		`
 		insert into sites (
@@ -138,7 +138,7 @@ func (m *SQLModel) CreateSite(userId int64, name sql.NullString, url string) (Si
 	return newSite(row)
 }
 
-func (m *SQLModel) FindCurrentUser(sessionId string) *User {
+func (m *Model) FindCurrentUser(sessionId string) *User {
 	row := m.db.QueryRow(
 		`
 		select users.id, users.passcode, users.email, users.updated_at, users.created_at
@@ -163,7 +163,7 @@ func (m *SQLModel) FindCurrentUser(sessionId string) *User {
 	return &user
 }
 
-func (m *SQLModel) FindCurrentUserId(sessionId string) int64 {
+func (m *Model) FindCurrentUserId(sessionId string) int64 {
 	row := m.db.QueryRow(
 		`
 		select sessions.user_id
@@ -193,7 +193,7 @@ func scan(row *sql.Row, values ...interface{}) error {
 	return nil
 }
 
-func (m *SQLModel) ListSites(userId int64) []Site {
+func (m *Model) ListSites(userId int64) []Site {
 	rows, err := m.db.Query(
 		`
 		select id, user_id, name, url, updated_at, created_at
@@ -227,7 +227,7 @@ func newSite(row *sql.Row) (Site, error) {
 	return site, err
 }
 
-func (m *SQLModel) passcode() string {
+func (m *Model) passcode() string {
 	max := 9999
 	min := 1000
 

@@ -41,16 +41,6 @@ type App struct {
 	templates *template.Template
 }
 
-type Model interface {
-	CreateSession(user User) (Session, error)
-	CreateUser() (User, error)
-	FindCurrentUser(id string) *User
-	FindCurrentUserId(id string) int64
-	DeleteSession(id string) (sql.Result, error)
-	CreateSite(userId int64, name sql.NullString, url string) (Site, error)
-	ListSites(userId int64) []Site
-}
-
 type Logger interface {
 	Printf(format string, v ...interface{})
 }
@@ -92,8 +82,8 @@ func (app *App) newSite(w http.ResponseWriter, r *http.Request) {
 func (app *App) createSite(w http.ResponseWriter, r *http.Request) {
 	name := r.FormValue("name")
 	url := r.FormValue("url")
-	user := app.currentUser(r) // TODO: context?
-	_, err := app.model.CreateSite(user.Id, sql.NullString{String: name, Valid: name != ""}, url)
+	userId := app.currentUserId(r) // TODO: context?
+	_, err := app.model.CreateSite(userId, sql.NullString{String: name, Valid: name != ""}, url)
 	if err != nil {
 		app.newSite(w, r)
 	}
@@ -155,7 +145,7 @@ func (app *App) signup(w http.ResponseWriter, r *http.Request) {
 
 func (app *App) private(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if app.currentUser(r) == nil {
+		if app.currentUserId(r) == 0 {
 			location := "/?return-url=" + url.QueryEscape(r.URL.Path)
 			redirect(w, r, location)
 			return
