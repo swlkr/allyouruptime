@@ -8,6 +8,8 @@ import (
 	"math/rand"
 	"strings"
 	"time"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 type Session struct {
@@ -159,6 +161,36 @@ func (m *SQLModel) FindCurrentUser(sessionId string) *User {
 		}
 	}
 	return &user
+}
+
+func (m *SQLModel) FindCurrentUserId(sessionId string) int64 {
+	row := m.db.QueryRow(
+		`
+		select sessions.user_id
+		from sessions
+		where session_id = $1
+		and created_at > strftime('%s','now','-90 days')
+		order by created_at desc
+		limit 1
+		`, sessionId,
+	)
+	var id int64
+	err := scan(row, &id)
+	haltOn(err)
+	return id
+}
+
+func scan(row *sql.Row, values ...interface{}) error {
+	err := row.Scan(values...)
+	if err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			return nil
+		default:
+			return err
+		}
+	}
+	return nil
 }
 
 func (m *SQLModel) ListSites(userId int64) []Site {

@@ -10,8 +10,6 @@ import (
 	"net/http"
 	"net/url"
 	"time"
-
-	_ "github.com/mattn/go-sqlite3"
 )
 
 //go:embed views/*
@@ -20,8 +18,8 @@ var templateFS embed.FS
 type Middleware func(http.HandlerFunc) http.HandlerFunc
 
 type View struct {
-	CurrentUser *User
-	CsrfToken   string
+	CurrentUserId int64
+	CsrfToken     string
 	Home
 	NewSite
 }
@@ -47,6 +45,7 @@ type Model interface {
 	CreateSession(user User) (Session, error)
 	CreateUser() (User, error)
 	FindCurrentUser(id string) *User
+	FindCurrentUserId(id string) int64
 	DeleteSession(id string) (sql.Result, error)
 	CreateSite(userId int64, name sql.NullString, url string) (Site, error)
 	ListSites(userId int64) []Site
@@ -56,12 +55,8 @@ type Logger interface {
 	Printf(format string, v ...interface{})
 }
 
-func NewApp(logger Logger) (*App, error) {
+func NewApp(logger Logger, model Model) (*App, error) {
 	templates := template.Must(template.ParseFS(templateFS, "views/*"))
-	db, err := sql.Open("sqlite3", "allyouruptime.sqlite3")
-	haltOn(err)
-	model, err := NewSQLModel(db)
-	haltOn(err)
 	app := &App{
 		model:     model,
 		logger:    logger,
@@ -178,16 +173,11 @@ func (app *App) currentUser(r *http.Request) *User {
 }
 
 func (app *App) currentUserId(r *http.Request) int64 {
-	user := app.model.FindCurrentUser(app.sessionId(r))
-	if user != nil {
-		return user.Id
-	} else {
-		return 0
-	}
+	return app.model.FindCurrentUserId(app.sessionId(r))
 }
 
 func (app *App) render(w http.ResponseWriter, r *http.Request, name string, view View) {
-	view.CurrentUser = app.currentUser(r)
+	view.CurrentUserId = app.currentUserId(r)
 	view.CsrfToken = app.newCsrfToken(w, r)
 	err := app.templates.ExecuteTemplate(w, name+".tmpl", view)
 	haltOn(err)

@@ -10,7 +10,7 @@
     <body>
       <nav>
         <a href=/>Home</a>
-        {{if .CurrentUser}}
+        {{if .CurrentUserId}}
           <h-stack>
             <a href="/new-site">Add your site</a>
             <form action=/logout method=post>
