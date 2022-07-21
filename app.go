@@ -2,17 +2,15 @@ package main
 
 import (
 	"crypto/rand"
-	"embed"
 	"encoding/hex"
 	"html/template"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 )
-
-//go:embed views/*
-var templateFS embed.FS
 
 type Middleware func(http.HandlerFunc) http.HandlerFunc
 
@@ -22,6 +20,12 @@ type View struct {
 	Home
 	NewSite
 	Profile
+	Login
+}
+
+type Login struct {
+	Passcode        string
+	InvalidPasscode bool
 }
 
 type NewSite struct {
@@ -39,23 +43,38 @@ type Profile struct {
 }
 
 type App struct {
-	model     Model
-	logger    Logger
-	mux       *http.ServeMux
-	templates *template.Template
+	model       Model
+	logger      Logger
+	mux         *http.ServeMux
+	templates   *template.Template
+	templateMap map[string]*template.Template
 }
 
 type Logger interface {
 	Printf(format string, v ...interface{})
 }
 
+func templateMap() map[string]*template.Template {
+	var templates map[string]*template.Template
+	templates = make(map[string]*template.Template)
+	files, err := ioutil.ReadDir("./views")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, f := range files {
+		templates[f.Name()] = template.Must(template.ParseFiles("views/layout.tmpl", "views/"+f.Name()))
+	}
+
+	return templates
+}
+
 func NewApp(logger Logger, model Model) (*App, error) {
-	templates := template.Must(template.ParseFS(templateFS, "views/*"))
 	app := &App{
-		model:     model,
-		logger:    logger,
-		mux:       http.NewServeMux(),
-		templates: templates,
+		model:       model,
+		logger:      logger,
+		mux:         http.NewServeMux(),
+		templateMap: templateMap(),
 	}
 	app.addRoutes()
 	return app, nil
@@ -65,6 +84,8 @@ func (app *App) addRoutes() {
 	app.get("/", app.home)
 	app.get("/new-signup", app.newSignup)
 	app.post("/signup", app.signup)
+	app.get("/login", app.login)
+	app.post("/sessions", app.createSession)
 	app.post("/logout", app.private(app.logout))
 	app.get("/new-site", app.private(app.newSite))
 	app.post("/create-site", app.private(app.createSite))
@@ -75,6 +96,45 @@ func (app *App) addRoutes() {
 	app.mux.Handle("/static/", http.StripPrefix("/static", fileServer))
 }
 
+func (app *App) login(w http.ResponseWriter, r *http.Request) {
+	view := View{
+		Login: Login{
+			Passcode:        r.FormValue("passcode"),
+			InvalidPasscode: false,
+		},
+	}
+	app.render(w, r, "login", view)
+}
+
+func (app *App) createSession(w http.ResponseWriter, r *http.Request) {
+	userId := app.model.FindUserFromPasscode(r.FormValue("passcode"))
+	if userId == 0 {
+		view := View{
+			Login: Login{
+				Passcode:        r.FormValue("passcode"),
+				InvalidPasscode: true,
+			},
+		}
+		app.render(w, r, "login", view)
+		return
+	}
+	session, err := app.model.CreateSession(userId)
+	if err != nil {
+		http.Error(w, "500 Internal Server Error", http.StatusInternalServerError)
+	}
+	cookie := &http.Cookie{
+		Name:     "sesh",
+		Value:    session.SessionId,
+		MaxAge:   30 * 24 * 3600,
+		Path:     "/",
+		Secure:   r.URL.Scheme == "https",
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
+	}
+	http.SetCookie(w, cookie)
+	redirect(w, r, "/")
+}
+
 func (app *App) newSite(w http.ResponseWriter, r *http.Request) {
 	view := View{
 		NewSite: NewSite{
@@ -82,7 +142,7 @@ func (app *App) newSite(w http.ResponseWriter, r *http.Request) {
 			Name: r.FormValue("name"),
 		},
 	}
-	app.render(w, r, "newSite", view)
+	app.render(w, r, "new-site", view)
 }
 
 func (app *App) createSite(w http.ResponseWriter, r *http.Request) {
@@ -119,11 +179,11 @@ func (app *App) home(w http.ResponseWriter, r *http.Request) {
 			Sites:    app.model.ListSites(app.currentUserId(r)),
 		},
 	}
-	app.render(w, r, "home", view)
+	app.render(w, r, "index", view)
 }
 
 func (app *App) newSignup(w http.ResponseWriter, r *http.Request) {
-	app.render(w, r, "newSignup", View{})
+	app.render(w, r, "new-signup", View{})
 }
 
 func (app *App) signup(w http.ResponseWriter, r *http.Request) {
@@ -131,7 +191,7 @@ func (app *App) signup(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "500 Internal Server Error", http.StatusInternalServerError)
 	}
-	session, err := app.model.CreateSession(user)
+	session, err := app.model.CreateSession(user.Id)
 	if err != nil {
 		http.Error(w, "500 Internal Server Error", http.StatusInternalServerError)
 	}
@@ -193,27 +253,53 @@ func (app *App) currentUserId(r *http.Request) int64 {
 func (app *App) render(w http.ResponseWriter, r *http.Request, name string, view View) {
 	view.CurrentUserId = app.currentUserId(r)
 	view.CsrfToken = app.newCsrfToken(w, r)
-	err := app.templates.ExecuteTemplate(w, name+".tmpl", view)
-	haltOn(err)
+	app.templateMap[name+".tmpl"].ExecuteTemplate(w, "layout.tmpl", view)
+}
+
+type ResponseWriter struct {
+	http.ResponseWriter
+	statusCode int
+}
+
+func (rw *ResponseWriter) WriteHeader(code int) {
+	rw.statusCode = code
+	rw.ResponseWriter.WriteHeader(code)
 }
 
 func (app *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
-	w.Header().Set("Cache-Control", "no-cache")
-	app.mux.ServeHTTP(w, r)
-	app.logger.Printf("message=Request finished method=%s path=%s duration=%v", r.Method, r.URL.Path, time.Since(start))
+	rw := &ResponseWriter{w, http.StatusOK}
+	rw.Header().Set("Cache-Control", "no-cache")
+	app.mux.ServeHTTP(rw, r)
+	if !strings.HasPrefix(r.URL.Path, "/static/") {
+		app.logger.Printf("message=Request finished method=%s path=%s status=%v duration=%v", r.Method, r.URL.Path, rw.statusCode, time.Since(start))
+	}
 }
 
-func (app *App) get(pattern string, handlerFunc http.HandlerFunc, middleware ...Middleware) {
-	app.mux.HandleFunc(pattern, use(allow(handlerFunc, http.MethodGet), middleware...))
+func (app *App) get(pattern string, handlerFunc http.HandlerFunc) {
+	app.mux.HandleFunc(
+		pattern,
+		notFound(allow(handlerFunc, http.MethodGet), pattern),
+	)
 }
 
-func (app *App) post(pattern string, handlerFunc http.HandlerFunc, middleware ...Middleware) {
-	app.mux.HandleFunc(pattern, use(csrf(allow(handlerFunc, http.MethodPost)), middleware...))
+func (app *App) post(pattern string, handlerFunc http.HandlerFunc) {
+	app.mux.HandleFunc(pattern, checkCsrfToken(allow(handlerFunc, http.MethodPost)))
 }
 
-// newCSRFToken returns the current session's CSRF token, generating a new one
-// and settings the "csrf-token" cookie if not present.
+func (app *App) csrfToken(w http.ResponseWriter, r *http.Request) string {
+	cookie, err := r.Cookie("csrf-token")
+	if err != nil {
+		switch err {
+		case http.ErrNoCookie:
+			return ""
+		default:
+			haltOn(err)
+		}
+	}
+	return cookie.Value
+}
+
 func (app *App) newCsrfToken(w http.ResponseWriter, r *http.Request) string {
 	token := generateCSRFToken()
 	cookie := &http.Cookie{
@@ -233,6 +319,16 @@ func allow(h http.HandlerFunc, method string) http.HandlerFunc {
 		if method != r.Method {
 			w.Header().Set("Allow", method)
 			http.Error(w, "405 method not allowed", http.StatusMethodNotAllowed)
+		} else {
+			h(w, r)
+		}
+	}
+}
+
+func notFound(h http.HandlerFunc, pattern string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != pattern {
+			http.Error(w, "404 Not Found", http.StatusNotFound)
 		} else {
 			h(w, r)
 		}
@@ -259,7 +355,7 @@ func redirect(w http.ResponseWriter, r *http.Request, path string) {
 // csrf wraps the given handler ensuring that the CSRF token in the "csrf-token"
 // cookie matches the token in the
 // "csrf-token" form field.
-func csrf(h http.HandlerFunc) http.HandlerFunc {
+func checkCsrfToken(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token := r.FormValue("_csrf")
 		cookieValue := cookieValue(r, "csrf-token")

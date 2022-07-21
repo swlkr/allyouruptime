@@ -1,0 +1,73 @@
+{{define "title"}}all your uptime{{end}}
+
+{{define "body"}}
+  <main>
+    {{if not .CurrentUserId }}
+      <div class="text-center flex flex-col gap-8 mt-8">
+        <div class="flex flex-col">
+          <h3>Free website uptime monitoring</h3>
+          <p>
+            Get started with <b>unlimited sites</b> and <b>5 minute checks</b> for <b>free</b>
+          </p>
+        </div>
+        <div class="flex flex-col gap-2">
+          <form action=/signup method=post>
+            <input type=hidden name=_csrf value={{.CsrfToken}} />
+            <button class="cta" type=submit>Monitor unlimited websites for free</button>
+          </form>
+          <a href="/login">Already have an account? Login here</a>
+        </div>
+      </div>
+    {{end}}
+
+    {{if .Home.Passcode}}
+      <p>
+        This is your secret passcode, keep it secret, don't forget it, it's how you log back into this website.
+      </p>
+
+      <p>
+        If you think you'll forget it, <a href="/profile">click here to add an optional email to your profile</a> and I'll send
+        you a new one if you do forget
+      </p>
+
+      <h4>
+        Your passcode is:
+        <br/>
+        {{.Home.Passcode}}
+      </h4>
+    {{end}}
+
+    {{if .Sites}}
+      <h4>Sites</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Url</th>
+            <th>Last Downtime</th>
+            <th>% Uptime</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{range .Sites}}
+            <tr>
+              <td>
+                {{.Name.String}}
+              </td>
+              <td>
+                {{.Url}}
+              </td>
+              <td>
+              </td>
+              <td>
+              </td>
+            </tr>
+          {{end}}
+          <tr>
+          </tr>
+        </tbody>
+      </table>
+    {{end}}
+  </main>
+{{end}}
+

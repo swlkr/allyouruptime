@@ -1,0 +1,23 @@
+{{define "body"}}
+  <main class="mt-8">
+    <h4 class="text-center">
+      Welcome back to all your uptime
+    </h4>
+    <div class="mt-16 mx-auto max-w-2xs px-4">
+      <form action=/sessions method=post>
+        <input type=hidden name=_csrf value={{.CsrfToken}} />
+        <label for=passcode>
+          Enter your account number
+        </label>
+        <input type=text name=passcode value="{{.Login.Passcode}}" class="{{if .Login.InvalidPasscode}}border-error{{end}}" />
+        {{if .Login.InvalidPasscode}}
+          <div class="text-error">Invalid passcode</div>
+        {{end}}
+        <button type="submit">
+          Log in
+        </button>
+        <a class="text-center" href="/forgot-account-number">I lost my account number</a>
+      </form>
+    </div>
+  </main>
+{{end}}

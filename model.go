@@ -101,7 +101,7 @@ func (m *Model) CreateUser() (User, error) {
 	return user, err
 }
 
-func (m *Model) CreateSession(user User) (Session, error) {
+func (m *Model) CreateSession(userId int64) (Session, error) {
 	row := m.db.QueryRow(
 		`insert into sessions (
 			session_id, user_id
@@ -110,7 +110,7 @@ func (m *Model) CreateSession(user User) (Session, error) {
 		)
 		returning id, session_id, user_id, updated_at, created_at`,
 		randomHex(32),
-		user.Id,
+		userId,
 	)
 	session := Session{}
 	err := row.Scan(&session.Id, &session.SessionId, &session.UserId, &session.UpdatedAt, &session.CreatedAt)
@@ -186,6 +186,29 @@ func (m *Model) FindCurrentUserId(sessionId string) int64 {
 	var id int64
 	err := scan(row, &id)
 	haltOn(err)
+	return id
+}
+
+func (m *Model) FindUserFromPasscode(passcode string) int64 {
+	row := m.db.QueryRow(
+		`
+		select id
+		from users
+		where passcode = $1
+		order by created_at desc
+		limit 1
+		`, passcode,
+	)
+	var id int64 = 0
+	err := row.Scan(&id)
+	if err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			return 0
+		default:
+			haltOn(err)
+		}
+	}
 	return id
 }
 

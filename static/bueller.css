@@ -1,0 +1,123 @@
+html, body {
+  font-family: var(--font-sans);
+  font-size: var(--scale-0);
+}
+
+body {
+  margin: 0 auto;
+}
+
+button[type="submit"], button {
+  background-color: var(--color-indigo-500);
+  color: var(--color-gray-100);
+  padding: var(--size-3) var(--size-7);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--scale-0);
+  cursor: pointer;
+  box-shadow: var(--elevation-3);
+  text-align: center;
+  display: block;
+}
+
+button[type="submit"]:hover, button:hover {
+  background-color: var(--color-indigo-700);
+}
+
+header > nav {
+  width: 100%;
+  margin: 0 auto;
+  padding: var(--size-4);
+  background-color: var(--color-gray-50);
+}
+
+nav {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: var(--size-4);
+}
+
+main {
+  max-width: var(--width-md);
+  margin: 0 auto;
+}
+
+h1 {
+  font-size: var(--scale-10);
+}
+
+h2 {
+  font-size: var(--scale-8);
+}
+
+h3 {
+  font-size: var(--scale-6);
+}
+
+h4 {
+  font-size: var(--scale-4);
+}
+
+p {
+  line-height: var(--line-md);
+}
+
+/* forms */
+input[type="submit"] {
+  cursor: pointer;
+}
+
+:where(
+  input[type="text"],
+  input[type="password"],
+  input[type="email"]
+) {
+  padding: var(--size-2);
+  font-size: var(--scale-0);
+  border-style: solid;
+  border-width: var(--size-px);
+  border-radius: var(--radius-md);
+  border-color: var(--color-gray-300);
+  display: block;
+  width: 100%;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4);
+}
+
+a, input[type="submit"] {
+  color: var(--color-indigo-500);
+}
+
+a:hover, a:focus {
+  color: var(--color-indigo-700);
+}
+
+a:visited {
+  color: var(--color-indigo-500);
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-2);
+  width: 100%;
+}
+
+/* dark mode */
+
+@media(prefers-color-scheme: dark) {
+  html, body {
+    background-color: var(--color-gray-900);
+    color: var(--color-gray-100);
+  }
+
+  header > nav {
+    background-color: var(--color-gray-800);
+  }
+}

@@ -1,16 +1,15 @@
-{{template "header" .}}
 
-<h1>Your profile</h1>
+{{define "body"}}
+  <h3>Your profile</h3>
 
-<form action=/update-profile method=post class="flex flex-col w-2/3">
-  <input type=hidden name=_csrf value={{.CsrfToken}} />
-  <label>
-    <div>Your email</div>
-    <input type=text name=email value="{{.Profile.Email}}" class="w-full" placeholder="you@example.com" />
-  </label>
-  <button type=submit>
-    Add an email to your profile
-  </button>
-</form>
-
-{{template "footer"}}
+  <form action=/update-profile method=post class="flex flex-col w-2/3">
+    <input type=hidden name=_csrf value={{.CsrfToken}} />
+    <label>
+      <div>Your email</div>
+      <input type=text name=email value="{{.Profile.Email}}" class="w-full" placeholder="you@example.com" />
+    </label>
+    <button type=submit>
+      Add an email to your profile
+    </button>
+  </form>
+{{end}}

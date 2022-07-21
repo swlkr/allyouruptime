@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>
+      {{block "title" .}}all your uptime{{end}}
+    </title>
+    <link rel=stylesheet href="/static/totally.css" />
+    <link rel=stylesheet href="/static/reset.css" />
+    <link rel=stylesheet href="/static/bueller.css" />
+    <link rel=stylesheet href="/static/components.css" />
+    <link rel=stylesheet href="/static/utilities.css" />
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=" />
+  </head>
+  <body>
+    <header>
+      <nav>
+        <a href=/>all your uptime</a>
+        {{if .CurrentUserId}}
+          <a href="/new-site">New site</a>
+          <a href="/profile">Profile</a>
+          <form action=/logout method=post>
+            <input type=hidden name=_csrf value={{.CsrfToken}} />
+            <input type=submit value=Logout>
+          </form>
+        {{end}}
+      </nav>
+    </header>
+    {{block "body" .}}{{end}}
+  </body>
+</html>

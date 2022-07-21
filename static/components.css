@@ -1,0 +1,25 @@
+.cta {
+  background-color: var(--color-orange-500);
+  color: #fff;
+  padding: var(--size-5) var(--size-9);
+  font-size: var(--scale-1);
+  box-shadow: var(--elevation-4);
+  width: fit-content;
+  margin: 0 auto;
+}
+
+.cta:hover {
+  background-color: var(--color-orange-700);
+}
+
+.text-error {
+  color: var(--color-red-500);
+}
+
+.bg-error {
+  background-color: var(--color-red-500);
+}
+
+.border-error {
+  border-color: var(--color-red-500);
+}
