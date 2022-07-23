@@ -15,6 +15,7 @@ import (
 type Middleware func(http.HandlerFunc) http.HandlerFunc
 
 type View struct {
+	SuccessFlash  string
 	CurrentUserId int64
 	CsrfToken     string
 	Home
@@ -39,7 +40,8 @@ type Home struct {
 }
 
 type Profile struct {
-	Email string
+	Email    string
+	Passcode string
 }
 
 type App struct {
@@ -91,6 +93,7 @@ func (app *App) addRoutes() {
 	app.post("/create-site", app.private(app.createSite))
 	app.get("/profile", app.private(app.profile))
 	app.post("/update-profile", app.private(app.updateProfile))
+	app.post("/delete-account", app.private(app.deleteAccount))
 
 	fileServer := http.FileServer(http.Dir("./static/"))
 	app.mux.Handle("/static/", http.StripPrefix("/static", fileServer))
@@ -172,8 +175,10 @@ func (app *App) logout(w http.ResponseWriter, r *http.Request) {
 
 func (app *App) home(w http.ResponseWriter, r *http.Request) {
 	flash, err := GetFlash(w, r, "passcode")
+	successFlash, err := GetFlash(w, r, "success")
 	haltOn(err)
 	view := View{
+		SuccessFlash: string(successFlash),
 		Home: Home{
 			Passcode: string(flash),
 			Sites:    app.model.ListSites(app.currentUserId(r)),
@@ -190,10 +195,12 @@ func (app *App) signup(w http.ResponseWriter, r *http.Request) {
 	user, err := app.model.CreateUser()
 	if err != nil {
 		http.Error(w, "500 Internal Server Error", http.StatusInternalServerError)
+		return
 	}
 	session, err := app.model.CreateSession(user.Id)
 	if err != nil {
 		http.Error(w, "500 Internal Server Error", http.StatusInternalServerError)
+		return
 	}
 	cookie := &http.Cookie{
 		Name:     "sesh",
@@ -207,13 +214,18 @@ func (app *App) signup(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, cookie)
 	SetFlash(w, "passcode", []byte(user.Passcode))
 	_, err = app.model.CreateSite(user.Id, "", r.FormValue("url"))
+	if err != nil {
+		http.Error(w, "500 Internal Server Error", http.StatusInternalServerError)
+		return
+	}
 	redirect(w, r, "/")
 }
 
 func (app *App) profile(w http.ResponseWriter, r *http.Request) {
 	view := View{
 		Profile: Profile{
-			Email: app.currentUser(r).Email.String,
+			Email:    app.currentUser(r).Email.String,
+			Passcode: app.currentUser(r).Passcode,
 		},
 	}
 	app.render(w, r, "profile", view)
@@ -225,6 +237,23 @@ func (app *App) updateProfile(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "500 Internal Server Error", http.StatusInternalServerError)
 	}
 	redirect(w, r, "/profile")
+}
+
+func (app *App) deleteAccount(w http.ResponseWriter, r *http.Request) {
+	err := app.model.DeleteAccount(app.currentUserId(r))
+	haltOn(err)
+	cookie := &http.Cookie{
+		Name:     "sesh",
+		Value:    "",
+		Path:     "/",
+		MaxAge:   -1,
+		Secure:   r.URL.Scheme == "https",
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
+	}
+	http.SetCookie(w, cookie)
+	SetFlash(w, "success", []byte("Account deleted successfully"))
+	redirect(w, r, "/")
 }
 
 func (app *App) private(h http.HandlerFunc) http.HandlerFunc {

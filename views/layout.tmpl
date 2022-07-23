@@ -16,15 +16,19 @@
       <nav>
         <a href=/>all your uptime</a>
         {{if .CurrentUserId}}
-          <a href="/new-site">New site</a>
-          <a href="/profile">Profile</a>
+          <a href="/profile">profile</a>
           <form action=/logout method=post>
             <input type=hidden name=_csrf value={{.CsrfToken}} />
-            <input type=submit value=Logout>
+            <input type=submit value=logout>
           </form>
         {{end}}
       </nav>
     </header>
+    {{if .SuccessFlash}}
+      <aside class="my-8 mx-auto max-w-sm text-center">
+        {{.SuccessFlash}}
+      </aside>
+    {{end}}
     {{block "body" .}}{{end}}
   </body>
 </html>

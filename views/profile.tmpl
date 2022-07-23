@@ -1,15 +1,27 @@
-
 {{define "body"}}
-  <h3>Your profile</h3>
+  <div class="mt-8 mx-auto max-w-2xs px-4">
 
-  <form action=/update-profile method=post class="flex flex-col w-2/3">
-    <input type=hidden name=_csrf value={{.CsrfToken}} />
-    <label>
-      <div>Your email</div>
-      <input type=text name=email value="{{.Profile.Email}}" class="w-full" placeholder="you@example.com" />
-    </label>
-    <button type=submit>
-      Add an email to your profile
-    </button>
-  </form>
+    <aside class="text-center max-w-sm mx-auto">
+      Your passcode is:
+      <br/>
+      <b>{{.Profile.Passcode}}</b>
+    </aside>
+
+    <form action=/update-profile method=post class="mt-8">
+      <input type=hidden name=_csrf value={{.CsrfToken}} />
+      <input type=text name=email value="{{.Profile.Email}}" placeholder="you@example.com" />
+      <button type=submit>
+        Add an email to your profile
+      </button>
+    </form>
+
+    <hr />
+
+    <form action=/delete-account method=post class="mt-8">
+      <input type=hidden name=_csrf value={{.CsrfToken}} />
+      <button class="red" type=submit>
+        Delete your account
+      </button>
+    </form>
+  </div>
 {{end}}

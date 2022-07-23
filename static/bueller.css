@@ -18,24 +18,23 @@ button[type="submit"], button {
   box-shadow: var(--elevation-3);
   text-align: center;
   display: block;
+  width: 100%;
 }
 
 button[type="submit"]:hover, button:hover {
   background-color: var(--color-indigo-700);
 }
 
-header > nav {
-  width: 100%;
-  margin: 0 auto;
-  padding: var(--size-4);
+header {
   background-color: var(--color-gray-50);
+  padding: var(--size-4);
 }
 
-nav {
+header > nav {
   display: flex;
   flex-direction: row;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
   gap: var(--size-4);
 }
 
@@ -64,30 +63,42 @@ p {
   line-height: var(--line-md);
 }
 
-/* forms */
 input[type="submit"] {
   cursor: pointer;
 }
 
-:where(
-  input[type="text"],
-  input[type="password"],
-  input[type="email"]
-) {
-  padding: var(--size-2);
-  font-size: var(--scale-0);
-  border-style: solid;
-  border-width: var(--size-px);
-  border-radius: var(--radius-md);
-  border-color: var(--color-gray-300);
-  display: block;
-  width: 100%;
+input[type="text"]::placeholder,
+input[type="password"]::placeholder,
+input[type="email"]::placeholder {
+  color: var(--color-gray-300);
 }
 
+input[type="text"],
+input[type="password"],
+input[type="email"] {
+  padding: var(--size-2);
+  font-size: var(--scale-0);
+  border-radius: var(--radius-md);
+  display: block;
+  width: 100%;
+  border-color: transparent;
+  box-shadow: 0 0 0 1px var(--color-gray-300);
+  transition: box-shadow 0.3s ease-in-out
+}
+
+input[type="text"]:focus,
+input[type="text"]:active,
+input[type="password"]:focus,
+input[type="password"]:active,
+input[type="email"]:focus,
+input[type="email"]:active {
+  box-shadow: 0 0 0 2px var(--color-indigo-500)
+}
+
+
 form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--size-4);
+  display: grid;
+  gap: var(--size-2);
 }
 
 a, input[type="submit"] {
@@ -102,14 +113,16 @@ a:visited {
   color: var(--color-indigo-500);
 }
 
-form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--size-2);
-  width: 100%;
+aside {
+  background-color: var(--color-gray-50);
+  padding: var(--size-4);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--elevation-1);
 }
 
-/* dark mode */
+b {
+  font-weight: var(--weight-bold);
+}
 
 @media(prefers-color-scheme: dark) {
   html, body {
@@ -117,7 +130,12 @@ form {
     color: var(--color-gray-100);
   }
 
-  header > nav {
+  header {
     background-color: var(--color-gray-800);
+  }
+
+  aside {
+    background-color: var(--color-gray-700);
+    color: #fff;
   }
 }

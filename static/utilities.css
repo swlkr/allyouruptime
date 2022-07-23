@@ -34,6 +34,10 @@
   gap: var(--size-8);
 }
 
+.gap-16 {
+  gap: var(--size-16);
+}
+
 .mt-8 {
   margin-top: var(--size-8);
 }
@@ -42,9 +46,18 @@
   margin-top: var(--size-16);
 }
 
+.my-8 {
+  margin-top: var(--size-8);
+  margin-bottom: var(--size-8);
+}
+
 .mx-auto {
   margin-left: auto;
   margin-right: auto;
+}
+
+.max-w-sm {
+  max-width: var(--width-sm);
 }
 
 .max-w-2xs {

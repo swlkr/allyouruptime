@@ -21,5 +21,13 @@
 }
 
 .border-error {
-  border-color: var(--color-red-500);
+  box-shadow: 0 0 0 2px var(--color-red-500);
+}
+
+button.red {
+  background-color: var(--color-red-500);
+}
+
+button.red:hover {
+  background-color: var(--color-red-700);
 }

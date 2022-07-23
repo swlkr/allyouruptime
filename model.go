@@ -66,7 +66,7 @@ func NewModel(db *sql.DB) (Model, error) {
 
 		create table if not exists sites (
 			id integer primary key,
-			user_id integer not null references users(id),
+			user_id integer not null references users(id) on delete cascade,
 			name text,
 			url text not null,
 			updated_at integer,
@@ -263,6 +263,19 @@ func (m *Model) UpdateEmail(userId int64, e string) error {
 		`,
 		email, userId,
 	)
+	return err
+}
+
+func (m *Model) DeleteAccount(userId int64) error {
+	_, err := m.db.Exec(`delete from users where id = $1`, userId)
+	if err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			return nil
+		default:
+			return err
+		}
+	}
 	return err
 }
 
