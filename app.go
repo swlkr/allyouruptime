@@ -213,11 +213,6 @@ func (app *App) signup(w http.ResponseWriter, r *http.Request) {
 	}
 	http.SetCookie(w, cookie)
 	SetFlash(w, "passcode", []byte(user.Passcode))
-	_, err = app.model.CreateSite(user.Id, "", r.FormValue("url"))
-	if err != nil {
-		http.Error(w, "500 Internal Server Error", http.StatusInternalServerError)
-		return
-	}
 	redirect(w, r, "/")
 }
 
