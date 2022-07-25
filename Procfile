@@ -1,1 +1,1 @@
-server: watchexec --restart --exts go,tmpl --watch ./views --watch . -- go run .
+app: watchexec --restart --exts go,tmpl --watch ./views --watch . -- go run .
