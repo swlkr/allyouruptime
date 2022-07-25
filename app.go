@@ -276,7 +276,7 @@ func (app *App) currentUserId(r *http.Request) int64 {
 
 func (app *App) render(w http.ResponseWriter, r *http.Request, name string, view View) {
 	view.CurrentUserId = app.currentUserId(r)
-	view.CsrfToken = app.newCsrfToken(w, r)
+	view.CsrfToken = app.setCsrfToken(w, r)
 	app.templateMap[name+".tmpl"].ExecuteTemplate(w, "layout.tmpl", view)
 }
 
@@ -301,30 +301,18 @@ func (app *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *App) get(pattern string, handlerFunc http.HandlerFunc) {
-	app.mux.HandleFunc(
-		pattern,
-		notFound(allow(handlerFunc, http.MethodGet), pattern),
-	)
+	app.mux.HandleFunc(pattern, notFound(allowGet(handlerFunc), pattern))
 }
 
 func (app *App) post(pattern string, handlerFunc http.HandlerFunc) {
-	app.mux.HandleFunc(pattern, checkCsrfToken(allow(handlerFunc, http.MethodPost)))
+	app.mux.HandleFunc(pattern, checkCsrfToken(allowPost(handlerFunc)))
 }
 
-func (app *App) csrfToken(w http.ResponseWriter, r *http.Request) string {
-	cookie, err := r.Cookie("csrf-token")
-	if err != nil {
-		switch err {
-		case http.ErrNoCookie:
-			return ""
-		default:
-			haltOn(err)
-		}
+func (app *App) setCsrfToken(w http.ResponseWriter, r *http.Request) string {
+	if r.Method == http.MethodPost {
+		return cookieValue(r, "csrf-token")
 	}
-	return cookie.Value
-}
 
-func (app *App) newCsrfToken(w http.ResponseWriter, r *http.Request) string {
 	token := generateCSRFToken()
 	cookie := &http.Cookie{
 		Name:     "csrf-token",
@@ -347,6 +335,14 @@ func allow(h http.HandlerFunc, method string) http.HandlerFunc {
 			h(w, r)
 		}
 	}
+}
+
+func allowGet(h http.HandlerFunc) http.HandlerFunc {
+	return allow(h, http.MethodGet)
+}
+
+func allowPost(h http.HandlerFunc) http.HandlerFunc {
+	return allow(h, http.MethodPost)
 }
 
 func notFound(h http.HandlerFunc, pattern string) http.HandlerFunc {
@@ -381,9 +377,9 @@ func redirect(w http.ResponseWriter, r *http.Request, path string) {
 // "csrf-token" form field.
 func checkCsrfToken(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		token := r.FormValue("_csrf")
-		cookieValue := cookieValue(r, "csrf-token")
-		if token != cookieValue {
+		formToken := r.FormValue("_csrf")
+		cookieToken := cookieValue(r, "csrf-token")
+		if formToken != cookieToken {
 			http.Error(w, "invalid CSRF token or cookie", http.StatusBadRequest)
 			return
 		}
