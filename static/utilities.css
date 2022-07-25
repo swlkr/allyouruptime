@@ -64,6 +64,10 @@
   max-width: var(--width-2xs);
 }
 
+.w-content {
+  width: fit-content;
+}
+
 .px-4 {
   padding-left: var(--size-4);
   padding-right: var(--size-4);

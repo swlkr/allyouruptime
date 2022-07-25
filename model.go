@@ -68,7 +68,7 @@ func NewModel(db *sql.DB) (Model, error) {
 			id integer primary key,
 			user_id integer not null references users(id) on delete cascade,
 			name text,
-			url text not null,
+			url text not null constraint url_not_blank check(length(url) > 0),
 			updated_at integer,
 			created_at integer not null default(unixepoch()),
 			unique(user_id, url)
@@ -277,6 +277,32 @@ func (m *Model) DeleteAccount(userId int64) error {
 		}
 	}
 	return err
+}
+
+func (m *Model) AllSites() []Site {
+	rows, err := m.db.Query(
+		`select id, user_id, name, url, updated_at, created_at
+		from sites
+		order by created_at desc`,
+	)
+	haltOn(err)
+	defer rows.Close()
+	if rows.Err() != nil {
+		switch rows.Err() {
+		case sql.ErrNoRows:
+			return nil
+		default:
+			haltOn(err)
+		}
+	}
+	var sites []Site
+	for rows.Next() {
+		site := Site{}
+		err = rows.Scan(&site.Id, &site.UserId, &site.Name, &site.Url, &site.UpdatedAt, &site.CreatedAt)
+		haltOn(err)
+		sites = append(sites, site)
+	}
+	return sites
 }
 
 func newSite(row *sql.Row) (Site, error) {

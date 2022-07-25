@@ -30,8 +30,9 @@ type Login struct {
 }
 
 type NewSite struct {
-	Url  string
-	Name string
+	Url      string
+	BlankUrl bool
+	Name     string
 }
 
 type Home struct {
@@ -124,6 +125,7 @@ func (app *App) createSession(w http.ResponseWriter, r *http.Request) {
 	session, err := app.model.CreateSession(userId)
 	if err != nil {
 		http.Error(w, "500 Internal Server Error", http.StatusInternalServerError)
+		return
 	}
 	cookie := &http.Cookie{
 		Name:     "sesh",
@@ -141,8 +143,9 @@ func (app *App) createSession(w http.ResponseWriter, r *http.Request) {
 func (app *App) newSite(w http.ResponseWriter, r *http.Request) {
 	view := View{
 		NewSite: NewSite{
-			Url:  r.FormValue("url"),
-			Name: r.FormValue("name"),
+			Url:      r.FormValue("url"),
+			Name:     r.FormValue("name"),
+			BlankUrl: false,
 		},
 	}
 	app.render(w, r, "new-site", view)
@@ -154,7 +157,14 @@ func (app *App) createSite(w http.ResponseWriter, r *http.Request) {
 	userId := app.currentUserId(r) // TODO: context?
 	_, err := app.model.CreateSite(userId, name, url)
 	if err != nil {
-		app.newSite(w, r)
+		view := View{
+			NewSite: NewSite{
+				Url:      r.FormValue("url"),
+				Name:     r.FormValue("name"),
+				BlankUrl: true,
+			},
+		}
+		app.render(w, r, "new-site", view)
 	}
 	redirect(w, r, "/")
 }
@@ -177,11 +187,12 @@ func (app *App) home(w http.ResponseWriter, r *http.Request) {
 	flash, err := GetFlash(w, r, "passcode")
 	successFlash, err := GetFlash(w, r, "success")
 	haltOn(err)
+	sites := app.model.ListSites(app.currentUserId(r))
 	view := View{
 		SuccessFlash: string(successFlash),
 		Home: Home{
 			Passcode: string(flash),
-			Sites:    app.model.ListSites(app.currentUserId(r)),
+			Sites:    sites,
 		},
 	}
 	app.render(w, r, "index", view)

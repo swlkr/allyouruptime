@@ -1,22 +1,28 @@
 {{define "title"}}
-  all your uptime - new signup
+  all your uptime - new site
 {{end}}
 
 {{define "body"}}
-  <h1>Add a new site</h1>
-
-  <form action=/create-site method=post>
-    <input type=hidden name=_csrf value={{.CsrfToken}} />
-    <div>
-      <label for=url>url</label>
-      <input type=text name=url value="{{.NewSite.Url}}" />
+  <main>
+    <div class="mt-16 mx-auto max-w-sm px-4">
+      <h4>Add a new site</h4>
+      <form action=/create-site method=post class="mt-8">
+        <input type=hidden name=_csrf value={{.CsrfToken}} />
+        <div class="grid gap-1">
+          <label for=url>url</label>
+          <input type=text name=url value="{{.NewSite.Url}}" class="{{if .NewSite.BlankUrl}}border-error{{end}}" />
+          {{if .NewSite.BlankUrl}}
+            <div class="text-error">Url can't be blank</div>
+          {{end}}
+        </div>
+        <div class="grid gap-1">
+          <label for=name>name</label>
+          <input type=text name=name value="{{.NewSite.Name}}" />
+        </div>
+        <button type="submit">
+          Add your site
+        </button>
+      </form>
     </div>
-    <div>
-      <label for=name>name</label>
-      <input type=text name=name value="{{.NewSite.Name}}" />
-    </div>
-    <button type="submit">
-      Add your site
-    </button>
-  </form>
+  </main>
 {{end}}

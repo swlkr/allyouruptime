@@ -39,36 +39,44 @@
       </aside>
     {{end}}
 
-    {{if eq (len .Sites) 0 }}
-    {{else}}
-      <table>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Url</th>
-            <th>Last Downtime</th>
-            <th>% Uptime</th>
-          </tr>
-        </thead>
-        <tbody>
-          {{range .Sites}}
+    {{if .CurrentUserId}}
+      {{if eq (len .Sites) 0}}
+        <a href="/new-site">
+          <button>Click here to create your first site</button>
+        </a>
+      {{else}}
+        <a href="/new-site">
+          <button class="w-content">Add site</button>
+        </a>
+        <table>
+          <thead>
             <tr>
-              <td>
-                {{.Name.String}}
-              </td>
-              <td>
-                {{.Url}}
-              </td>
-              <td>
-              </td>
-              <td>
-              </td>
+              <th>Name</th>
+              <th>Url</th>
+              <th>Last Downtime</th>
+              <th>% Uptime</th>
             </tr>
-          {{end}}
-          <tr>
-          </tr>
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {{range .Sites}}
+              <tr>
+                <td>
+                  {{.Name.String}}
+                </td>
+                <td>
+                  {{.Url}}
+                </td>
+                <td>
+                </td>
+                <td>
+                </td>
+              </tr>
+            {{end}}
+            <tr>
+            </tr>
+          </tbody>
+        </table>
+      {{end}}
     {{end}}
   </main>
 {{end}}
