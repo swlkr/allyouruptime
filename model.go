@@ -156,17 +156,28 @@ func (m *Model) CreateSite(userId int64, n string, url string) (Site, error) {
 }
 
 func (m *Model) CreatePing(siteId int64, statusCode int) (sql.Result, error) {
-	return m.db.Exec(
-		`
-		insert into pings (
-			site_id,
-			status_code
-		) values (
-			$1, $2
+	row := m.db.QueryRow("select status_code from pings where site_id = ?", siteId)
+	var lastStatusCode int
+	err := row.Scan(&lastStatusCode)
+	if err != sql.ErrNoRows {
+		haltOn(err)
+	}
+
+	if lastStatusCode != statusCode {
+		return m.db.Exec(
+			`
+			insert into pings (
+				site_id,
+				status_code
+			) values (
+				$1, $2
+			)
+			`,
+			siteId, statusCode,
 		)
-		`,
-		siteId, statusCode,
-	)
+	} else {
+		return nil, nil
+	}
 }
 
 func (m *Model) FindCurrentUser(sessionId string) *User {
