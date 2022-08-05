@@ -124,6 +124,10 @@ b {
   font-weight: var(--weight-bold);
 }
 
+table th {
+  text-align: left;
+}
+
 @media(prefers-color-scheme: dark) {
   html, body {
     background-color: var(--color-gray-900);

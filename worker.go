@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"sync"
 	"time"
@@ -19,38 +18,36 @@ func NewWorker(logger Logger, model Model) Worker {
 	}
 }
 
-func (w Worker) Work() {
+func (this Worker) Work() {
 	go func() {
 		for {
-			w.PingAllSites()
+			this.PingAllSites()
 			time.Sleep(1 * time.Minute)
 		}
 	}()
 }
 
-func (w Worker) PingAllSites() {
-	sites := w.model.AllSites()
+func (this Worker) PingAllSites() {
+	sites := this.model.AllSites()
 	length := len(sites)
 
 	var wg sync.WaitGroup
 	wg.Add(length)
 
-	fmt.Println("Starting Work()")
-
 	for i := 0; i < length; i++ {
 		go func(i int) {
 			defer wg.Done()
 			site := sites[i]
-			w.logger.Printf("HEAD %s", site.Url)
 			res, err := http.Head(site.Url)
 			if err != nil {
-				w.logger.Printf("%v", err.Error())
+				this.model.CreatePing(site.Id, 500)
+				//this.logger.Printf("%v", err.Error())
 				return
 			}
-			w.logger.Printf("%s %d", res.Status, res.StatusCode)
+			//this.logger.Printf("%s %d", res.Status, res.StatusCode)
+			this.model.CreatePing(site.Id, res.StatusCode)
 		}(i)
 	}
 
 	wg.Wait()
-	fmt.Println("Finished Work()")
 }

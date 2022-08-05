@@ -37,6 +37,14 @@ type Site struct {
 	CreatedAt int64
 }
 
+type Ping struct {
+	Id         int64
+	SiteId     int64
+	StatusCode int
+	UpdatedAt  int64
+	CreatedAt  int64
+}
+
 type Model struct {
 	db  *sql.DB
 	rnd *rand.Rand
@@ -77,7 +85,7 @@ func NewModel(db *sql.DB) (Model, error) {
 		create table if not exists pings (
 			id integer primary key,
 			site_id integer not null references sites(id) on delete cascade,
-			up integer not null default(0),
+			status_code integer not null default(0),
 			updated_at integer,
 			created_at integer not null default(unixepoch())
 		);
@@ -145,6 +153,20 @@ func (m *Model) CreateSite(userId int64, n string, url string) (Site, error) {
 		userId, name, url,
 	)
 	return newSite(row)
+}
+
+func (m *Model) CreatePing(siteId int64, statusCode int) (sql.Result, error) {
+	return m.db.Exec(
+		`
+		insert into pings (
+			site_id,
+			status_code
+		) values (
+			$1, $2
+		)
+		`,
+		siteId, statusCode,
+	)
 }
 
 func (m *Model) FindCurrentUser(sessionId string) *User {
