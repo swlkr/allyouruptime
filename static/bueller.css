@@ -19,6 +19,7 @@ button[type="submit"], button {
   text-align: center;
   display: block;
   width: 100%;
+  text-transform: capitalize;
 }
 
 button[type="submit"]:hover, button:hover {
@@ -35,7 +36,7 @@ header > nav {
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: var(--size-4);
+  gap: var(--size-8);
 }
 
 main {
@@ -124,8 +125,34 @@ b {
   font-weight: var(--weight-bold);
 }
 
+table {
+  border-collapse: collapse;
+  border-radius: var(--radius-md);
+  border-style: hidden; /* hide standard table (collapsed) border */
+  box-shadow: 0 0 0 1px var(--color-gray-100); /* this draws the table border  */
+}
+
 table th {
   text-align: left;
+  background-color: var(--color-gray-100);
+  padding: var(--size-3);
+}
+
+table td {
+  text-align: left;
+  padding: var(--size-3);
+}
+
+table tr:nth-child(even) {
+  background-color: var(--color-gray-50);
+}
+
+table th:first-child {
+  border-top-left-radius: var(--radius-md);
+}
+
+table th:last-child {
+  border-top-right-radius: var(--radius-md);
 }
 
 @media(prefers-color-scheme: dark) {
@@ -141,5 +168,26 @@ table th {
   aside {
     background-color: var(--color-gray-700);
     color: #fff;
+  }
+
+  input[type="text"]::placeholder,
+  input[type="password"]::placeholder,
+  input[type="email"]::placeholder {
+    color: var(--color-gray-700);
+  }
+
+  input[type="text"],
+  input[type="password"],
+  input[type="email"] {
+    box-shadow: 0 0 0 1px var(--color-gray-700);
+  }
+
+  input[type="text"]:focus,
+  input[type="text"]:active,
+  input[type="password"]:focus,
+  input[type="password"]:active,
+  input[type="email"]:focus,
+  input[type="email"]:active {
+    box-shadow: 0 0 0 2px var(--color-indigo-500)
   }
 }

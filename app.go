@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"html/template"
 	"io/ioutil"
 	"log"
@@ -10,6 +11,8 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/mattn/go-sqlite3"
 )
 
 type Middleware func(http.HandlerFunc) http.HandlerFunc
@@ -30,9 +33,10 @@ type Login struct {
 }
 
 type NewSite struct {
-	Url      string
-	BlankUrl bool
-	Name     string
+	Url          string
+	BlankUrl     bool
+	DuplicateUrl bool
+	Name         string
 }
 
 type Home struct {
@@ -92,6 +96,7 @@ func (app *App) addRoutes() {
 	app.post("/logout", app.private(app.logout))
 	app.get("/new-site", app.private(app.newSite))
 	app.post("/create-site", app.private(app.createSite))
+	app.post("/delete-site", app.private(app.deleteSite))
 	app.get("/profile", app.private(app.profile))
 	app.post("/update-profile", app.private(app.updateProfile))
 	app.post("/delete-account", app.private(app.deleteAccount))
@@ -111,11 +116,12 @@ func (app *App) login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *App) createSession(w http.ResponseWriter, r *http.Request) {
-	userId := app.model.FindUserFromPasscode(r.FormValue("passcode"))
+	passcode := r.FormValue("passcode")
+	userId := app.model.FindUserFromPasscode(strings.TrimSpace(passcode))
 	if userId == 0 {
 		view := View{
 			Login: Login{
-				Passcode:        r.FormValue("passcode"),
+				Passcode:        passcode,
 				InvalidPasscode: true,
 			},
 		}
@@ -157,15 +163,28 @@ func (app *App) createSite(w http.ResponseWriter, r *http.Request) {
 	userId := app.currentUserId(r) // TODO: context?
 	_, err := app.model.CreateSite(userId, name, url)
 	if err != nil {
+		var sqliteErr sqlite3.Error
 		view := View{
 			NewSite: NewSite{
-				Url:      r.FormValue("url"),
-				Name:     r.FormValue("name"),
-				BlankUrl: true,
+				Url:          url,
+				Name:         name,
+				BlankUrl:     len(strings.TrimSpace(url)) == 0,
+				DuplicateUrl: errors.As(err, &sqliteErr) && sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique,
 			},
 		}
 		app.render(w, r, "new-site", view)
 	}
+	redirect(w, r, "/")
+}
+
+func (app *App) deleteSite(w http.ResponseWriter, r *http.Request) {
+	siteId := r.FormValue("id")
+	userId := app.currentUserId(r)
+	_, err := app.model.DeleteSite(userId, siteId)
+	if err != nil {
+		SetFlash(w, "error", []byte("Could not delete site"))
+	}
+
 	redirect(w, r, "/")
 }
 

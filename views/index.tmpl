@@ -1,4 +1,6 @@
 {{define "title"}}all your uptime{{end}}
+    {{define "csrfToken"}}
+    {{end}}
 
 {{define "body"}}
   <main class="mt-8 flex flex-col gap-8 px-4">
@@ -46,7 +48,7 @@
         </a>
       {{else}}
         <a href="/new-site">
-          <button class="w-content">Add site</button>
+          <button class="w-content">add a site</button>
         </a>
         <table>
           <thead>
@@ -54,10 +56,13 @@
               <th>Name</th>
               <th>Url</th>
               <th>Last Downtime</th>
+              <th>Last Status</th>
               <th>% Uptime</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
+            {{$csrfToken := .CsrfToken}}
             {{range .Sites}}
               <tr>
                 <td>
@@ -67,8 +72,26 @@
                   {{.Url}}
                 </td>
                 <td>
+                  {{if .LastDowntime.Valid}}
+                    {{.LastDowntime.Int64}}
+                  {{else}}
+                    N/A
+                  {{end}}
                 </td>
                 <td>
+                  {{if .LastStatusCode.Valid}}
+                    {{.LastStatusCode.Int64}}
+                  {{else}}
+                    N/A
+                  {{end}}
+                </td>
+                <td></td>
+                <td>
+                  <form action="/delete-site" method="post">
+                    <input type=hidden name=_csrf value={{$csrfToken}} />
+                    <input type="hidden" name="id" value="{{.Id}}" />
+                    <input type="submit" value="Delete" />
+                  </form>
                 </td>
               </tr>
             {{end}}

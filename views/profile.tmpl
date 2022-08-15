@@ -19,9 +19,7 @@
 
     <form action=/delete-account method=post class="mt-8">
       <input type=hidden name=_csrf value={{.CsrfToken}} />
-      <button class="red" type=submit>
-        Delete your account
-      </button>
+      <input type="submit" value="Delete your account" class="text-center text-error" />
     </form>
   </div>
 {{end}}

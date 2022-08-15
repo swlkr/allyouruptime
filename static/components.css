@@ -13,7 +13,11 @@
 }
 
 .text-error {
-  color: var(--color-red-500);
+  color: var(--color-red-500) !important;
+}
+
+.text-error:hover {
+  color: var(--color-red-700) !important;
 }
 
 .bg-error {
@@ -22,12 +26,4 @@
 
 .border-error {
   box-shadow: 0 0 0 2px var(--color-red-500);
-}
-
-button.red {
-  background-color: var(--color-red-500);
-}
-
-button.red:hover {
-  background-color: var(--color-red-700);
 }

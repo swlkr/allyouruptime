@@ -29,12 +29,14 @@ type User struct {
 }
 
 type Site struct {
-	Id        int64
-	UserId    int64
-	Name      sql.NullString
-	Url       string
-	UpdatedAt sql.NullInt64
-	CreatedAt int64
+	Id             int64
+	UserId         int64
+	Name           sql.NullString
+	Url            string
+	LastStatusCode sql.NullInt64
+	LastDowntime   sql.NullInt64
+	UpdatedAt      sql.NullInt64
+	CreatedAt      int64
 }
 
 type Ping struct {
@@ -137,22 +139,15 @@ func nullify(s string) sql.NullString {
 	}
 }
 
-func (m *Model) CreateSite(userId int64, n string, url string) (Site, error) {
-	name := nullify(n)
-	row := m.db.QueryRow(
-		`
-		insert into sites (
-			user_id,
-			name,
-			url
-		) values (
-			$1, $2, $3
-		)
-		returning id, user_id, name, url, updated_at, created_at
-		`,
-		userId, name, url,
+func (m *Model) DeleteSite(userId int64, id string) (sql.Result, error) {
+	return m.db.Exec(`delete from sites where user_id = $1 and id = $2`, userId, id)
+}
+
+func (m *Model) CreateSite(userId int64, name string, url string) (sql.Result, error) {
+	return m.db.Exec(
+		`insert into sites (user_id, name, url) values ($1, $2, $3)`,
+		userId, nullify(name), url,
 	)
-	return newSite(row)
 }
 
 func (m *Model) CreatePing(siteId int64, statusCode int) (sql.Result, error) {
@@ -261,9 +256,20 @@ func scan(row *sql.Row, values ...interface{}) error {
 func (m *Model) ListSites(userId int64) []Site {
 	rows, err := m.db.Query(
 		`
-		select id, user_id, name, url, updated_at, created_at
+		select sites.id, sites.user_id, sites.name, sites.url, pings.status_code, pings.created_at
 		from sites
-		where user_id = $1
+		left outer join (
+			select pings.site_id, pings.status_code, pings.created_at
+			from pings
+			where
+				id in (
+					select max(id) from pings group by site_id
+				)
+			and
+				status_code >= 500
+		) as pings
+		on sites.id = pings.site_id
+		where sites.user_id = $1
 		`, userId,
 	)
 	haltOn(err)
@@ -271,7 +277,7 @@ func (m *Model) ListSites(userId int64) []Site {
 	var sites []Site
 	for rows.Next() {
 		site := Site{}
-		err = rows.Scan(&site.Id, &site.UserId, &site.Name, &site.Url, &site.UpdatedAt, &site.CreatedAt)
+		err = rows.Scan(&site.Id, &site.UserId, &site.Name, &site.Url, &site.LastStatusCode, &site.LastDowntime)
 		haltOn(err)
 		sites = append(sites, site)
 	}

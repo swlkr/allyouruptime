@@ -14,6 +14,9 @@
           {{if .NewSite.BlankUrl}}
             <div class="text-error">Url can't be blank</div>
           {{end}}
+          {{if .NewSite.DuplicateUrl}}
+            <div class="text-error">Url has already been added</div>
+          {{end}}
         </div>
         <div class="grid gap-1">
           <label for=name>name</label>
